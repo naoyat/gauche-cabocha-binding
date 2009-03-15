@@ -1,6 +1,8 @@
 ;;;
 ;;; cabocha
 ;;;
+;;;  2009.3.15 by naoya_t
+;;;
 
 (define-module cabocha
   (export <cabocha>

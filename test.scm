@@ -1,6 +1,8 @@
 ;;;
 ;;; Test cabocha
 ;;;
+;;;  2009.3.15 by naoya_t
+;;;
 
 (use gauche.test)
 

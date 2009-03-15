@@ -1,5 +1,8 @@
 /*
  * cabocha.c
+ *
+ *  2009.3.15 by naoya_t
+ *
  */
 
 #include <gauche.h>

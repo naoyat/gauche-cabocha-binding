@@ -1,5 +1,8 @@
 /*
  * cabocha.h
+ *
+ *  2009.3.15 by naoya_t
+ *
  */
 
 /* Prologue */
