@@ -8,6 +8,8 @@
 #include <gauche.h>
 #include <gauche/extend.h>
 
+#include <mecab.h>
+#include "mecab.h"
 #include <cabocha.h>
 #include "cabocha.h"
 
@@ -24,6 +26,57 @@ ScmObj wrap_cabocha_t(cabocha_t *c)
   return SCM_OBJ(obj);
 }
 
+// cabocha_tree_t
+cabocha_tree_t* unwrap_cabocha_tree_t(ScmObj obj)
+{
+  return SCM_CABOCHA_TREE(obj)->ctree;
+}
+ScmObj wrap_cabocha_tree_t(cabocha_tree_t *ctree)
+{
+  ScmCaboChaTree *obj = SCM_NEW(ScmCaboChaTree);
+  SCM_SET_CLASS(obj, SCM_CLASS_CABOCHA_TREE);
+  obj->ctree = ctree;
+  return SCM_OBJ(obj);
+}
+
+// cabocha_chunk_t
+cabocha_chunk_t* unwrap_cabocha_chunk_t(ScmObj obj)
+{
+  return SCM_CABOCHA_CHUNK(obj)->cchunk;
+}
+ScmObj wrap_cabocha_chunk_t(cabocha_chunk_t *cchunk)
+{
+  ScmCaboChaChunk *obj = SCM_NEW(ScmCaboChaChunk);
+  SCM_SET_CLASS(obj, SCM_CLASS_CABOCHA_CHUNK);
+  obj->cchunk = cchunk;
+  return SCM_OBJ(obj);
+}
+
+// cabocha_token_t
+cabocha_token_t* unwrap_cabocha_token_t(ScmObj obj)
+{
+  return SCM_CABOCHA_TOKEN(obj)->ctok;
+}
+ScmObj wrap_cabocha_token_t(cabocha_token_t *ctok)
+{
+  ScmCaboChaToken *obj = SCM_NEW(ScmCaboChaToken);
+  SCM_SET_CLASS(obj, SCM_CLASS_CABOCHA_TOKEN);
+  obj->ctok = ctok;
+  return SCM_OBJ(obj);
+}
+
+/* mecab_node_t */
+const mecab_node_t* unwrap_mecab_node_t(ScmObj obj)
+{
+  return SCM_MECAB_NODE(obj)->mn;
+}
+ScmObj wrap_mecab_node_t(const mecab_node_t *mn)
+{
+  ScmMeCabNode *obj = SCM_NEW(ScmMeCabNode);
+  SCM_SET_CLASS(obj, SCM_CLASS_MECAB_NODE);
+  obj->mn = mn;
+  return SCM_OBJ(obj);
+}
 
 /* APIs with (int argc, char **argv) */
 #define cabocha_call_func(result_type,fn,args) do{  \
@@ -64,6 +117,16 @@ cabocha_t *cabocha_call_cabocha_func(cabocha_func_with_args fn, ScmObj args)
 int cabocha_call_int_func(int_func_with_args fn, ScmObj args)
 {
   cabocha_call_func(int,fn,args);
+}
+
+ScmObj Scm_MakeStringList(const char **strs, int size)
+{
+  if (size==0) return SCM_NIL;
+  ScmObj p = Scm_Cons(SCM_MAKE_STR_COPYING(strs[size-1]),SCM_NIL);
+  for (int i=size-2; i>=0; i--) {
+    p = Scm_Cons(SCM_MAKE_STR_COPYING(strs[i]), p);
+  }
+  return p;
 }
 
 /*

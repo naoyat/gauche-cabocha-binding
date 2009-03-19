@@ -8,6 +8,8 @@
 #include <gauche.h>
 #include <gauche/extend.h>
 
+#include <mecab.h>
+#include \"mecab.h\"
 #include <cabocha.h>
 #include \"cabocha.h\"
 "
@@ -15,11 +17,36 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-cclass <cabocha> "ScmCaboCha*" "Scm_CaboChaClass" () ())
-
 (define-type <cabocha-t> "cabocha_t*" "cabocha_t"
   "SCM_CABOCHAP" "unwrap_cabocha_t" "wrap_cabocha_t")
 
+(define-cclass <cabocha-tree> "ScmCaboChaTree*" "Scm_CaboChaTreeClass" () ())
+(define-type <cabocha-tree-t> "cabocha_tree_t*" "cabocha_tree_t"
+  "SCM_CABOCHA_TREEP" "unwrap_cabocha_tree_t" "wrap_cabocha_tree_t")
+
+(define-cclass <cabocha-chunk> "ScmCaboChaChunk*" "Scm_CaboChaChunkClass" () ())
+(define-type <cabocha-chunk-t> "cabocha_chunk_t*" "cabocha_chunk_t"
+  "SCM_CABOCHA_CHUNKP" "unwrap_cabocha_chunk_t" "wrap_cabocha_chunk_t")
+
+(define-cclass <cabocha-token> "ScmCaboChaToken*" "Scm_CaboChaTokenClass" () ())
+(define-type <cabocha-token-t> "cabocha_token_t*" "cabocha_token_t"
+  "SCM_CABOCHA_TOKENP" "unwrap_cabocha_token_t" "wrap_cabocha_token_t")
+
+;;;
+;(define-cclass <mecab> "ScmMeCab*" "Scm_MeCabClass" () ())
+(define-cclass <mecab-node> "ScmMeCabNode*" "Scm_MeCabNodeClass" () ())
+;(define-cclass <mecab-dictionary-info> "ScmMeCabDictionaryInfo*" "Scm_MeCabDictionaryInfoClass" () ())
+(define-type <const-mecab-node-t> "const mecab_node_t*" "const mecab_node_t"
+  "SCM_MECAB_NODEP" "unwrap_mecab_node_t" "wrap_mecab_node_t")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-cproc cabocha-do (&rest args)
+  (expr <int> "cabocha_call_int_func(&cabocha_do,args)"))
+
+;;
+;; parser
+;;
 
 ;;cabocha_t *cabocha_new(int argc, char **argv)
 ;;    cabocha のインスタンスを生成します.
@@ -71,6 +98,119 @@
 
 (define-cproc cabocha-destroyed? (c::<cabocha-t>)
 "  SCM_RETURN(SCM_MAKE_BOOL(c == NULL)); ")
+
+;;
+(define-cproc cabocha-sparse-totree (c::<cabocha-t> str::<const-cstring>)
+  (call <cabocha-tree-t> "cabocha_sparse_totree"))
+
+(define-cproc cabocha-sparse-totree2 (c::<cabocha-t> str::<const-cstring> len::<uint>)
+  (call <cabocha-tree-t> "cabocha_sparse_totree2"))
+
+;;
+;; tree
+;;
+(define-cproc cabocha-tree-new ()
+  (call <cabocha-tree-t> "cabocha_tree_new"))
+(define-cproc cabocha-tree-destroy (tree::<cabocha-tree-t>)
+  (call <void> "cabocha_tree_destroy"))
+(define-cproc cabocha-tree-empty (tree::<cabocha-tree-t>)
+  (call <int> "cabocha_tree_empty"))
+(define-cproc cabocha-tree-clear (tree::<cabocha-tree-t>)
+  (call <void> "cabocha_tree_clear"))
+(define-cproc cabocha-tree-clear-chunk (tree::<cabocha-tree-t>)
+  (call <void> "cabocha_tree_clear_chunk"))
+(define-cproc cabocha-tree-size (tree::<cabocha-tree-t>)
+  (call <uint> "cabocha_tree_size"))
+(define-cproc cabocha-tree-chunk-size (tree::<cabocha-tree-t>)
+  (call <uint> "cabocha_tree_chunk_size"))
+(define-cproc cabocha-tree-token-size (tree::<cabocha-tree-t>)
+  (call <uint> "cabocha_tree_token_size"))
+(define-cproc cabocha-tree-sentence (tree::<cabocha-tree-t>)
+  (call <const-cstring> "cabocha_tree_sentence"))
+(define-cproc cabocha-tree-sentence-size (tree::<cabocha-tree-t>)
+  (call <uint> "cabocha_tree_sentence_size"))
+(define-cproc cabocha-tree-set-sentence (tree::<cabocha-tree-t> sentence::<const-cstring> length::<uint>)
+  (call <void> "cabocha_tree_set_sentence"))
+(define-cproc cabocha-tree-read (tree::<cabocha-tree-t> input::<const-cstring> length::<uint> input-layer::<int>)
+  ;; cabocha_input_layer_t : enum { INPUT_RAW_SENTENCE, _POS, _CHUNK, _SELECTION, _DEP }
+  (call <int> "cabocha_tree_read"))
+(define-cproc cabocha-tree-read-from-mecab-node (tree::<cabocha-tree-t> node::<const-mecab-node-t>)
+  (call <int> "cabocha_tree_read_from_mecab_node"))
+
+(define-cproc cabocha-tree-token (tree::<cabocha-tree-t> i::<uint>)
+  (call <cabocha-token-t> "cabocha_tree_token")) ;; const
+(define-cproc cabocha-tree-chunk (tree::<cabocha-tree-t> i::<uint>)
+  (call <cabocha-chunk-t> "cabocha_tree_chunk")) ;; const
+
+(define-cproc cabocha-tree-add-token (tree::<cabocha-tree-t>)
+  (call <cabocha-token-t> "cabocha_tree_add_token"))
+(define-cproc cabocha-tree-add-chunk (tree::<cabocha-tree-t>)
+  (call <cabocha-chunk-t> "cabocha_tree_add_chunk"))
+
+(define-cproc cabocha-tree-strdup (tree::<cabocha-tree-t> str::<const-cstring>)
+  (call <const-cstring> "cabocha_tree_strdup"))
+(define-cproc cabocha-tree-alloc (tree::<cabocha-tree-t> size::<uint>)
+  (call <const-cstring> "cabocha_tree_alloc"))
+
+(define-cproc cabocha-tree-tostr (tree::<cabocha-tree-t> format::<int>) ;; cabocha_format_t : ENUM { FORMAT-TREE -LATTICE -TREE_LATTICE -XML -NONE }
+  (call <const-cstring> "cabocha_tree_tostr"))
+;(define-cproc cabocha-tree-tostr2 (tree::<cabocha-tree-t> format::<cabocha-format-t str::<const-cstring> length::<uint>)
+;  const char            *cabocha_tree_tostr2(cabocha_tree_t* tree, cabocha_format_t format,
+;                                                                char *str, size_t length);
+(define-cproc cabocha-tree-set-charset (tree::<cabocha-tree-t> charset::<int>) ;; cabocha_charset_t : enum { EUC_JP, CP932, UTF8, ASCII }
+  (call <void> "cabocha_tree_set_charset"))
+(define-cproc cabocha-tree-charset (tree::<cabocha-tree-t>)
+  (call <int> "cabocha_tree_charset")) ;; cabocha_charset_t
+(define-cproc cabocha-tree-set-posset (tree::<cabocha-tree-t> posset::<int>) ;; cabocha_posset_t : enum { IPA, JUMAN }
+  (call <void> "cabocha_tree_set_posset"))
+(define-cproc cabocha-tree-posset (tree::<cabocha-tree-t>)
+  (call <int> "cabocha_tree_posset")) ;; cabocha_posset_t
+(define-cproc cabocha-tree-set-output-layer (tree::<cabocha-tree-t> output-layer::<int>)
+  ;; cabocha_output_layer_t : enum { OUTPUT*_RAW_SENTENCE, _POS, _CHUNK, _SELECTION, _DEP }
+  (call <void> "cabocha_tree_set_output_layer"))
+(define-cproc cabocha-tree-output-layer (tree::<cabocha-tree-t>)
+  (call <int> "cabocha_tree_output_layer")) ;; cabocha_output_layer_t
+
+(define-cproc cabocha-learn (&rest args)
+  (expr <int> "cabocha_call_int_func(&cabocha_learn,args)"))
+(define-cproc cabocha-system-eval (&rest args)
+  (expr <int> "cabocha_call_int_func(&cabocha_system_eval,args)"))
+(define-cproc cabocha-model-index (&rest args)
+  (expr <int> "cabocha_call_int_func(&cabocha_model_index,args)"))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define-cproc cabocha-chunk-link (chunk::<cabocha-chunk-t>)
+  (expr <int> "chunk->link"))
+(define-cproc cabocha-chunk-head-pos (chunk::<cabocha-chunk-t>)
+  (expr <uint> "chunk->head_pos"))
+(define-cproc cabocha-chunk-func-pos (chunk::<cabocha-chunk-t>)
+  (expr <uint> "chunk->func_pos"))
+(define-cproc cabocha-chunk-token-size (chunk::<cabocha-chunk-t>)
+  (expr <uint> "chunk->token_size"))
+(define-cproc cabocha-chunk-token-pos (chunk::<cabocha-chunk-t>)
+  (expr <uint> "chunk->token_pos"))
+(define-cproc cabocha-chunk-score (chunk::<cabocha-chunk-t>)
+  (expr <float> "chunk->score"))
+(define-cproc cabocha-chunk-feature-list (chunk::<cabocha-chunk-t>)
+" return Scm_MakeStringList(chunk->feature_list,chunk->feature_list_size);")
+(define-cproc cabocha-chunk-feature-list-size (chunk::<cabocha-chunk-t>)
+  (expr <uint> "chunk->feature_list_size"))
+
+(define-cproc cabocha-token-surface (token::<cabocha-token-t>)
+  (expr <const-cstring> "token->surface"))
+(define-cproc cabocha-token-normalized-surface (token::<cabocha-token-t>)
+  (expr <const-cstring> "token->normalized_surface"))
+(define-cproc cabocha-token-feature (token::<cabocha-token-t>)
+  (expr <const-cstring> "token->feature"))
+(define-cproc cabocha-token-feature-list (token::<cabocha-token-t>)
+" return Scm_MakeStringList(token->feature_list,token->feature_list_size);")
+(define-cproc cabocha-token-feature-list-size (token::<cabocha-token-t>)
+  (expr <uint> "token->feature_list_size"))
+(define-cproc cabocha-token-ne (token::<cabocha-token-t>)
+  (expr <const-cstring> "token->ne"))
+(define-cproc cabocha-token-chunk (token::<cabocha-token-t>)
+  (expr <cabocha-chunk-t> "token->chunk"))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
